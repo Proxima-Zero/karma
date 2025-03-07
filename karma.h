@@ -25,6 +25,8 @@ typedef struct Karma {
 		KarmaListener listeners[MAX_LISTENERS];
 	} topics[MAX_TOPICS];
 
+	void (*tcp_listen) (struct Karma *self, uint16_t port);
+
 	void (*release) (struct Karma **pself);
 } Karma;
 

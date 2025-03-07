@@ -6,6 +6,11 @@ release_karma(Karma **pself) {
 	*pself = NULL;
 }
 
+static void 
+karma_tcp_listen(struct Karma *self, uint16_t port) {
+	// TODO: impl
+}
+
 Karma*
 form_karma() {
 	Karma *karma = malloc(sizeof(*karma));
@@ -14,6 +19,7 @@ form_karma() {
 	}
 
 	karma->release = release_karma;
+	karma->tcp_listen = karma_tcp_listen;
 
 	return karma;
 }

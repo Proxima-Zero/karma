@@ -16,5 +16,6 @@ typedef struct KarmaLink {
 } KarmaLink;
 
 KarmaLink *form_direct_link(Karma *karma);
+KarmaLink *form_tcp_link(Karma *karma);
 
 #endif
