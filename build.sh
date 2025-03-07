@@ -1,10 +1,10 @@
 #!/bin/sh
 
 CC=${CC:=gcc}
-SRCS=main.c
+SRCS="main.c karma.c"
 BIN=karma
 
 set -x
 
 mkdir -p build
-$CC -o build/$BIN $SRCS
+$CC -g -o build/$BIN $SRCS -fno-strict-aliasing
