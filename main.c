@@ -10,6 +10,7 @@ void karma_listener(KarmaMessage msg) {
 
 int main() {
 	Karma *karma = form_karma();
+	karma->tcp_listen(karma, 1337);
 
 	KarmaLink *link = form_direct_link(karma);
 
