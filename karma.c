@@ -18,11 +18,43 @@ typedef struct {
 	int sockfd;
 } KarmaTcpCtx;
 
+
+typedef struct {
+	Karma *karma;
+	int clientfd;
+	mtx_t mutex;
+} KarmaTcpCbCtx;
+
+
+static void
+karma_tcp_listener_cb(KarmaMessage msg, void *ctx) {
+	// TODO: teardown connection handling
+	KarmaTcpCbCtx *tcpctx = (KarmaTcpCbCtx *) ctx;
+	Karma *self = tcpctx->karma;
+	int clientfd = tcpctx->clientfd;
+	mtx_t mutex = mutex;
+
+	mtx_lock(&mutex);
+	uint64_t npayload = htonll(msg.payload_size);
+	if (send(clientfd, &npayload, sizeof(npayload), 0) == -1) {
+		perror("error sending payload size to listener");
+		goto end;
+	}
+
+	if (send(clientfd, msg.payload, msg.payload_size, 0) == -1) {
+		perror("error sending payload to listener");
+		goto end;
+	}
+
+end:
+	mtx_unlock(&mutex);
+}
+
 static int
 karma_tcp_listen_loop(void *ctx) {
-	KarmaTcpCtx *tcpCtx = ctx;
-	Karma *self = tcpCtx->karma;
-	int sockfd = tcpCtx->sockfd;
+	KarmaTcpCtx *tcpctx = ctx;
+	Karma *self = tcpctx->karma;
+	int sockfd = tcpctx->sockfd;
 
 	while (1) {
 		// TODO: graceful stop
@@ -72,7 +104,11 @@ karma_tcp_listen_loop(void *ctx) {
 			close(clientfd);
 			break;
 		case KARMA_TCP_TYPE_LISTEN:
-			// TODO: implement
+			KarmaTcpCbCtx *cbctx = malloc(sizeof(KarmaTcpCbCtx));
+			cbctx->karma = self;
+			cbctx->clientfd = clientfd;
+			mtx_init(&cbctx->mutex, mtx_plain);
+			self->add_listener(self, header.topic_id, karma_tcp_listener_cb, cbctx);
 			break;
 		}
 	}
