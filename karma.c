@@ -6,16 +6,6 @@
 
 #define TCP_BUFFER_SIZE 1024
 
-typedef enum {
-	KARMA_TCP_TYPE_POST = 1,
-	KARMA_TCP_TYPE_LISTEN = 2
-} KarmaTcpConnType;
-
-typedef struct {
-	KarmaTcpConnType type;
-	uint16_t topic_id;
-} KarmaTcpConnHeader;
-
 static void
 release_karma(Karma **pself) {
 	free(*pself);

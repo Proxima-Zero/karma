@@ -10,6 +10,16 @@
 #define MAX_TOPICS 13
 #define MAX_LISTENERS 37
 
+typedef enum {
+	KARMA_TCP_TYPE_POST = 1,
+	KARMA_TCP_TYPE_LISTEN = 2
+} KarmaTcpConnType;
+
+typedef struct {
+	KarmaTcpConnType type;
+	uint16_t topic_id;
+} KarmaTcpConnHeader;
+
 typedef struct {
 	uint64_t payload_size;
 	uint8_t *payload;
