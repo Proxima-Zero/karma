@@ -15,7 +15,7 @@ typedef struct {
 	uint8_t *payload;
 } KarmaMessage;
 
-typedef void (*KarmaListener) (KarmaMessage msg);
+typedef void (*KarmaListener) (KarmaMessage msg, void *ctx);
 
 typedef struct Karma {
 	// TODO: prolly should add some flexibility... or probably we good and just need 
@@ -23,7 +23,11 @@ typedef struct Karma {
 	struct {
 		size_t len;
 		KarmaListener listeners[MAX_LISTENERS];
+		void *ctxs[MAX_LISTENERS];
 	} topics[MAX_TOPICS];
+
+	void (*add_listener)(struct Karma *self, uint16_t topic_id, KarmaListener kl, void *ctx);
+	void (*post_message)(struct Karma *self, uint16_t topic_id, KarmaMessage msg);
 
 	void (*tcp_listen) (struct Karma *self, uint16_t port);
 
