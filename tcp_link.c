@@ -49,13 +49,13 @@ karma_link_tcp_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg
 	}
 
 	uint64_t npayload_size = htonll(msg.payload_size);
-	if (send(sock, &npayload_size, sizeof(npayload_size), 0) != -1) {
+	if (send(sock, &npayload_size, sizeof(npayload_size), 0) == -1) {
 		perror("error sending payload size");
 		close(sock);
 		return;
 	}
 
-	if (send(sock, msg.payload, msg.payload_size, 0) != -1) {
+	if (send(sock, msg.payload, msg.payload_size, 0) == -1) {
 		perror("error sending payload");
 	}
 
@@ -77,7 +77,6 @@ KarmaLink *form_tcp_link(const char *addr, const int port) {
 		perror("Invalid address");
 		return NULL;
 	}
-
 
 	KarmaLink *link = malloc(sizeof(*link));
 	link->data.tcp.servaddr = servaddr;

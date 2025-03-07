@@ -3,13 +3,83 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <threads.h>
 
-#define TCP_BUFFER_SIZE 1024
+#include "util.h"
 
 static void
 release_karma(Karma **pself) {
 	free(*pself);
 	*pself = NULL;
+}
+
+typedef struct {
+	Karma *karma;
+	int sockfd;
+} KarmaTcpCtx;
+
+static int
+karma_tcp_listen_loop(void *ctx) {
+	KarmaTcpCtx *tcpCtx = ctx;
+	Karma *self = tcpCtx->karma;
+	int sockfd = tcpCtx->sockfd;
+
+	while (1) {
+		// TODO: graceful stop
+		struct sockaddr_in cliaddr;
+		socklen_t clilen = sizeof(sizeof(cliaddr));
+		int clientfd = accept(sockfd, (struct sockaddr *) &cliaddr, &clilen);
+ 
+		if (clientfd == -1) {
+			perror("error accepting connection");
+			continue;
+		}
+
+		KarmaTcpConnHeader header;
+		int nrecv = recv(clientfd, &header, sizeof(KarmaTcpConnHeader), 0);
+		if (nrecv != sizeof(KarmaTcpConnHeader)) {
+			printf("disconnected before received header");
+			close(clientfd);
+			continue;
+			
+		}
+		header.topic_id = ntohs(header.topic_id);
+
+		switch (header.type) {
+		case KARMA_TCP_TYPE_POST:
+			KarmaMessage msg;
+			nrecv = recv(clientfd, &msg.payload_size, sizeof(msg.payload_size), 0);
+
+			if (nrecv != sizeof(msg.payload_size)) {
+				perror("error receiving payload size");
+				close(clientfd);
+				continue;
+			}
+
+			msg.payload_size = ntohll(msg.payload_size);
+			// TODO: optimization using alloca?
+			msg.payload = malloc(msg.payload_size);
+
+			// TODO: adapt; create loop to read very long messages
+			nrecv = recv(clientfd, msg.payload, msg.payload_size, 0);
+			if (nrecv != msg.payload_size) {
+				perror("error reading the whole payload at once");
+				close(clientfd);
+				continue;
+			}
+			self->post_message(self, header.topic_id, msg);
+			free(msg.payload);
+			close(clientfd);
+			break;
+		case KARMA_TCP_TYPE_LISTEN:
+			// TODO: implement
+			break;
+		}
+	}
+
+	free(ctx);
+
+	return 0;
 }
 
 static void 
@@ -40,51 +110,13 @@ karma_tcp_listen(Karma *self, uint16_t port) {
 		exit(EXIT_FAILURE);
 	}
 
+	KarmaTcpCtx *ctx = malloc(sizeof(*ctx));
+	ctx->karma = self;
+	ctx->sockfd = sockfd;
+
+	thrd_t thread;
+	thrd_create(&thread, karma_tcp_listen_loop, ctx);
 	printf("Karma is started listening TCP traffic on port %d\n", port);
-
-	// TODO: threading
-	struct sockaddr_in cliaddr;
-	socklen_t clilen = sizeof(sizeof(cliaddr));
-	int clientfd = accept(sockfd, (struct sockaddr *) &cliaddr, &clilen);
-
-	if (clientfd == -1) {
-		perror("error accepting connection");
-		close(sockfd);
-		exit(EXIT_FAILURE);
-	}
-
-	char buffer[TCP_BUFFER_SIZE];
-
-	while (1) {
-		KarmaTcpConnHeader header;
-		int nrecv = recv(clientfd, &header, sizeof(KarmaTcpConnHeader), 0);
-		if (nrecv != sizeof(KarmaTcpConnHeader)) {
-			printf("disconnected before received header");
-			continue;
-			
-		}
-		header.topic_id = ntohs(header.topic_id);
-
-		switch (header.type) {
-		case KARMA_TCP_TYPE_POST:
-			// TODO: implement
-			break;
-		case KARMA_TCP_TYPE_LISTEN:
-			// TODO: implement
-			break;
-		}
-		// TODO: change this logic to actual Karma message handling
-		nrecv = recv(clientfd, buffer, TCP_BUFFER_SIZE, 0);
-		if (nrecv == 0) {
-			printf("disconnected\n");
-			break;
-		}
-		buffer[nrecv] = '\0';
-		printf("Received: %s\n", buffer);
-	}
-
-	close(clientfd);
-	close(sockfd);
 }
 
 static void
