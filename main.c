@@ -23,5 +23,7 @@ int main() {
 
 	link->post_message(link, 0, msg);
 
+	link->release(&link);
+	karma->release(&karma);
 	return 0;
 }

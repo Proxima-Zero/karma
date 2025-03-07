@@ -24,6 +24,8 @@ typedef struct Karma {
 		size_t len;
 		KarmaListener listeners[MAX_LISTENERS];
 	} topics[MAX_TOPICS];
+
+	void (*release) (struct Karma **pself);
 } Karma;
 
 Karma* form_karma();

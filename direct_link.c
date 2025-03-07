@@ -35,11 +35,19 @@ karma_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg) {
 	}
 }
 
+static void
+release_karma_link(KarmaLink **pself) {
+	free(*pself);
+	*pself = NULL;
+}
+
 KarmaLink *form_direct_link(Karma *karma) {
 	KarmaLink *link = malloc(sizeof(*link)); 
 	link->data.direct.karma = karma;
 	link->add_listener = karma_add_listener;
 	link->post_message = karma_post_message;
+
+	link->release = release_karma_link;
 
 	return link;
 }
