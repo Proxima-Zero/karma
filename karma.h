@@ -10,9 +10,6 @@
 #define MAX_TOPICS 13
 #define MAX_LISTENERS 37
 
-#define GET_SELF(self) \
-    __asm__("movq %%rdi, %0" : "=r" (self))
-
 typedef struct {
 	uint64_t payload_size;
 	uint8_t *payload;
@@ -27,9 +24,6 @@ typedef struct Karma {
 		size_t len;
 		KarmaListener listeners[MAX_LISTENERS];
 	} topics[MAX_TOPICS];
-
-	void (*add_listener)(struct Karma *self, uint16_t topic_id, KarmaListener kl);
-	void (*post_message)(struct Karma *self, uint16_t topic_id, KarmaMessage msg);
 } Karma;
 
 Karma* form_karma();
