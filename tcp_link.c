@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <threads.h>
 
 #include "util.h"
 
@@ -24,9 +25,79 @@ establish_connection(KarmaLink *self) {
 	return sock;
 }
 
+typedef struct {
+	KarmaLinkListener kll;
+	int sock;
+	void *usr_ctx;
+} KarmaLinkTcpCtx;
+
+static int
+karma_link_tcp_start_listen(void *ctx) {
+	KarmaLinkTcpCtx *tcp_ctx = ctx;
+	KarmaLinkListener kll = tcp_ctx->kll;
+	int sock = tcp_ctx->sock;
+	void *usr_ctx = tcp_ctx->usr_ctx;
+	free(ctx);
+
+	uint64_t bufsize = 1024;
+	char *buffer = malloc(bufsize);
+	while (1) {
+		// TODO: reestablishing connection in case of disconnect
+		KarmaMessage msg;
+		int nrecv = recv(sock, &msg.payload_size, sizeof(msg.payload_size), 0);
+
+		if (nrecv != sizeof(msg.payload_size)) {
+			perror("error getting payload size");
+			continue;
+		}
+
+		msg.payload_size = ntohll(msg.payload_size);
+
+		if (msg.payload_size > bufsize) {
+			bufsize = msg.payload_size;
+			buffer = realloc(buffer, msg.payload_size);
+		}
+
+		// TODO: thread safety considerations for buffer (what if listeners will run threads too?)
+		// TODO: change to a loop. it is possible we cannot read message in one read
+		nrecv = recv(sock, buffer, msg.payload_size, 0);
+		if ((uint64_t) nrecv != msg.payload_size) {
+			perror("error reading a whole message payload");
+			continue;
+		}
+
+		msg.payload = buffer;
+
+		kll(msg, usr_ctx);
+	}
+	free(buffer);
+}
+
 static void
-karma_link_tcp_add_listener(KarmaLink *self, uint16_t topic_id, KarmaListener kl, void *ctx) {
-	// TODO: impl
+karma_link_tcp_add_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListener kll, void *ctx) {
+	int sock;
+
+	if ((sock = establish_connection(self)) == -1) {
+		return;
+	}
+
+	KarmaTcpConnHeader header = {
+		.type = KARMA_TCP_TYPE_LISTEN,
+		.topic_id = htons(topic_id),
+	};
+
+	if (send(sock, &header, sizeof(KarmaTcpConnHeader), 0) == -1) {
+		perror("error sending header");
+		close(sock);
+		return;
+	}
+
+	thrd_t thread;
+	KarmaLinkTcpCtx *listen_ctx = malloc(sizeof(KarmaLinkTcpCtx));
+	listen_ctx->kll = kll;
+	listen_ctx->sock = sock;
+	listen_ctx->usr_ctx = ctx;
+	thrd_create(&thread, karma_link_tcp_start_listen, listen_ctx);
 }
 
 static void

@@ -16,7 +16,7 @@ int main() {
 	KarmaLink *link = form_direct_link(karma);
 	KarmaLink *tcp_link = form_tcp_link("127.0.0.1", 1337);
 
-	link->add_listener(link, 0, karma_listener, NULL);
+	tcp_link->add_listener(tcp_link, 0, karma_listener, NULL);
 
 	char *payload = "If a man speaks or acts with a pure thought, happiness follows him, like a shadow that never leaves him.\n";
 	size_t len = strlen(payload);

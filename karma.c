@@ -32,7 +32,7 @@ karma_tcp_listener_cb(KarmaMessage msg, void *ctx) {
 	KarmaTcpCbCtx *tcpctx = (KarmaTcpCbCtx *) ctx;
 	Karma *self = tcpctx->karma;
 	int clientfd = tcpctx->clientfd;
-	mtx_t mutex = mutex;
+	mtx_t mutex = tcpctx->mutex;
 
 	mtx_lock(&mutex);
 	uint64_t npayload = htonll(msg.payload_size);
