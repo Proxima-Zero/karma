@@ -21,7 +21,7 @@ typedef struct {
 } KarmaTcpConnHeader;
 
 typedef struct {
-	uint64_t payload_size;
+	uint32_t payload_size;
 	uint8_t *payload;
 } KarmaMessage;
 

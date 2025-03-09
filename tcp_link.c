@@ -51,7 +51,7 @@ karma_link_tcp_start_listen(void *ctx) {
 			continue;
 		}
 
-		msg.payload_size = ntohll(msg.payload_size);
+		msg.payload_size = ntohl(msg.payload_size);
 
 		if (msg.payload_size > bufsize) {
 			bufsize = msg.payload_size;
@@ -61,7 +61,7 @@ karma_link_tcp_start_listen(void *ctx) {
 		// TODO: thread safety considerations for buffer (what if listeners will run threads too?)
 		// TODO: change to a loop. it is possible we cannot read message in one read
 		nrecv = recv(sock, buffer, msg.payload_size, 0);
-		if ((uint64_t) nrecv != msg.payload_size) {
+		if (nrecv != msg.payload_size) {
 			perror("error reading a whole message payload");
 			continue;
 		}
@@ -119,7 +119,7 @@ karma_link_tcp_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg
 		return;
 	}
 
-	uint64_t npayload_size = htonll(msg.payload_size);
+	uint32_t npayload_size = htonl(msg.payload_size);
 	if (send(sock, &npayload_size, sizeof(npayload_size), 0) == -1) {
 		perror("error sending payload size");
 		close(sock);

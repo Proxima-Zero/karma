@@ -35,7 +35,7 @@ karma_tcp_listener_cb(KarmaMessage msg, void *ctx) {
 	mtx_t mutex = tcpctx->mutex;
 
 	mtx_lock(&mutex);
-	uint64_t npayload = htonll(msg.payload_size);
+	uint32_t npayload = htonl(msg.payload_size);
 	if (send(clientfd, &npayload, sizeof(npayload), 0) == -1) {
 		perror("error sending payload size to listener");
 		goto end;
@@ -88,7 +88,7 @@ karma_tcp_listen_loop(void *ctx) {
 				continue;
 			}
 
-			msg.payload_size = ntohll(msg.payload_size);
+			msg.payload_size = ntohl(msg.payload_size);
 			// TODO: optimization using alloca?
 			msg.payload = malloc(msg.payload_size);
 
