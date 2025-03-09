@@ -7,9 +7,6 @@
 #include <string.h>
 #include <stdint.h>
 
-#define MAX_TOPICS 13
-#define MAX_LISTENERS 37
-
 typedef enum {
 	KARMA_TCP_TYPE_POST = 1,
 	KARMA_TCP_TYPE_LISTEN = 2
@@ -27,14 +24,24 @@ typedef struct {
 
 typedef void (*KarmaListener) (KarmaMessage msg, void *ctx);
 
+typedef struct KarmaTopic {
+	size_t listeners_len;
+	size_t listeners_cap;
+	KarmaListener *listeners;
+	void **ctxs;
+
+	void (*add_listener) (struct KarmaTopic *self, KarmaListener kl, void *ctx);
+	void (*post_message) (struct KarmaTopic *self, KarmaMessage msg);
+	void (*release) (struct KarmaTopic **pself);
+} KarmaTopic;
+
+KarmaTopic *form_karma_topic();
+
 typedef struct Karma {
 	// TODO: prolly should add some flexibility... or probably we good and just need 
 	//       to specify these variables at compile time
-	struct {
-		size_t len;
-		KarmaListener listeners[MAX_LISTENERS];
-		void *ctxs[MAX_LISTENERS];
-	} topics[MAX_TOPICS];
+	KarmaTopic **topics;
+	size_t topics_len;
 
 	void (*add_listener)(struct Karma *self, uint16_t topic_id, KarmaListener kl, void *ctx);
 	void (*post_message)(struct Karma *self, uint16_t topic_id, KarmaMessage msg);

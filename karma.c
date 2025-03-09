@@ -9,6 +9,12 @@
 
 static void
 release_karma(Karma **pself) {
+	for (ssize_t i = 0; i < (*pself)->topics_len; ++i) {
+		KarmaTopic *topic = (*pself)->topics[i];
+		if (NULL != topic) {
+			topic->release(&topic);
+		}
+	}
 	free(*pself);
 	*pself = NULL;
 }
@@ -25,6 +31,20 @@ typedef struct {
 	mtx_t mutex;
 } KarmaTcpCbCtx;
 
+static KarmaTopic*
+karma_get_topic(Karma *karma, uint16_t topic_id) {
+	if (topic_id >= karma->topics_len) {
+		karma->topics = realloc(karma->topics, sizeof(KarmaTopic *) * (topic_id + 1));
+		bzero(karma->topics + karma->topics_len, sizeof(KarmaTopic *) * (topic_id + 1 - karma->topics_len));
+		karma->topics_len = topic_id + 1;
+	}
+
+	if (NULL == karma->topics[topic_id]) {
+		karma->topics[topic_id] = form_karma_topic();
+	}
+
+	return karma->topics[topic_id];
+}
 
 static void
 karma_tcp_listener_cb(KarmaMessage msg, void *ctx) {
@@ -157,43 +177,20 @@ karma_tcp_listen(Karma *self, uint16_t port) {
 
 static void
 karma_add_listener(Karma *self, uint16_t topic_id, KarmaListener kl, void *ctx) {
-	if (topic_id >= MAX_TOPICS) {
-		fprintf(stderr, "topic_id is too high (max=%d)\n", MAX_TOPICS);
-		return;
-	}
+	KarmaTopic *topic = karma_get_topic(self, topic_id);
 
-	size_t len = self->topics[topic_id].len;
-
-
-	if (len == MAX_LISTENERS) {
-		fprintf(stderr, "too much listeners\n");
-		return;
-	}
-
-	self->topics[topic_id].listeners[len] = kl;
-	self->topics[topic_id].ctxs[len] = ctx;
-	self->topics[topic_id].len++;
+	topic->add_listener(topic, kl, ctx);
 }
 
 static void
 karma_post_message(Karma *self, uint16_t topic_id, KarmaMessage msg) {
-	if (topic_id >= MAX_TOPICS) {
-		fprintf(stderr, "topic_id is too high (max=%d)\n", MAX_TOPICS);
-		return;
-	}
-
-	for (size_t i = 0; i < self->topics[topic_id].len; ++i) {
-		void *ctx = self->topics[topic_id].ctxs[i];
-		self->topics[topic_id].listeners[i](msg, ctx);
-	}
+	KarmaTopic *topic = karma_get_topic(self, topic_id);
+	topic->post_message(topic, msg);
 }
 
 Karma*
 form_karma() {
 	Karma *karma = malloc(sizeof(*karma));
-	for (size_t i = 0; i < MAX_TOPICS; ++i) {
-		karma->topics[i].len = 0;
-	}
 
 	karma->add_listener = karma_add_listener;
 	karma->post_message = karma_post_message;
