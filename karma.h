@@ -28,7 +28,7 @@ typedef struct {
 	uint8_t  *payload;
 } KarmaMessage;
 
-typedef struct {
+typedef struct KarmaMessages {
 	KarmaMessage *msgs;
 	size_t       len;
 } KarmaMessages;

@@ -135,6 +135,16 @@ karma_link_tcp_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg
 }
 
 static void
+karma_link_tcp_create_responder(KarmaLink *self, uint16_t topic_id, KarmaLinkResponder kr, void *ctx) {
+	// TODO: impl
+}
+
+static KarmaMessages
+karma_link_tcp_make_request(KarmaLink *self, uint16_t topic_id, KarmaMessage msg) {
+	// TODO: impl
+}
+
+static void
 release_karma_link(KarmaLink **pself) {
 	free(*pself);
 	*pself = NULL;
@@ -154,6 +164,8 @@ KarmaLink *form_tcp_link(const char *addr, const int port) {
 
 	link->add_listener = karma_link_tcp_add_listener;
 	link->post_message = karma_link_tcp_post_message;
+	link->add_responder = karma_link_tcp_create_responder;
+	link->make_request = karma_link_tcp_make_request;
 	link->release = release_karma_link;
 
 	return link;

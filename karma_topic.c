@@ -22,6 +22,7 @@ karma_topic_add_listener(KarmaTopic *self, KarmaListener kl, void *ctx) {
 static KarmaMessages
 karma_topic_make_request(KarmaTopic *self, KarmaMessage msg) {
 	KarmaMessages resps;
+	resps.msgs = malloc(sizeof(KarmaMessage) * self->responders_len);
 	resps.len = 0;
 	for (size_t i = 0; i < self->responders_len; ++i) {
 		void *ctx = self->ctxs[i];
@@ -63,6 +64,11 @@ karma_topic_release(KarmaTopic **pself) {
 
 KarmaTopic *form_karma_topic() {
 	KarmaTopic *topic = malloc(sizeof(KarmaTopic));
+	topic->responders_len = 0;
+	topic->responders_cap = LISTENER_BASE_CAP;
+	topic->responders = malloc(sizeof(KarmaListener) * topic->responders_cap);
+	topic->rctxs = malloc(sizeof(void *) * topic->responders_cap);
+
 	topic->listeners_len = 0;
 	topic->listeners_cap = LISTENER_BASE_CAP;
 	topic->listeners = malloc(sizeof(KarmaListener) * topic->listeners_cap);
