@@ -28,11 +28,9 @@ karma_get_topic(Karma *karma, uint16_t topic_id) {
 	return karma->topics[topic_id];
 }
 
-
 static void
 karma_add_listener(Karma *self, uint16_t topic_id, KarmaListener kl, void *ctx) {
 	KarmaTopic *topic = karma_get_topic(self, topic_id);
-
 	topic->add_listener(topic, kl, ctx);
 }
 
@@ -42,12 +40,26 @@ karma_post_message(Karma *self, uint16_t topic_id, KarmaMessage msg) {
 	topic->post_message(topic, msg);
 }
 
+static void
+karma_add_responder(Karma *self, uint16_t topic_id, KarmaResponder kr, void *ctx) {
+	KarmaTopic *topic = karma_get_topic(self, topic_id);
+	topic->add_responder(topic, kr, ctx);
+}
+
+static KarmaMessages
+karma_make_request(Karma *self, uint16_t topic_id, KarmaMessage msg) {
+	KarmaTopic *topic = karma_get_topic(self, topic_id);
+	return topic->make_request(topic, msg);
+}
+
 Karma*
 form_karma() {
 	Karma *karma = malloc(sizeof(*karma));
 
 	karma->add_listener = karma_add_listener;
 	karma->post_message = karma_post_message;
+	karma->add_responder = karma_add_responder;
+	karma->make_request = karma_make_request;
 
 	karma->release = release_karma;
 	karma->tcp_listen = karma_tcp_listen; // karma_tcp.h

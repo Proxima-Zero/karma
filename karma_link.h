@@ -18,6 +18,7 @@ typedef struct KarmaLink {
 	void (*add_listener)(struct KarmaLink *self, uint16_t topic_id, KarmaLinkListener kl, void *ctx);
 	void (*post_message)(struct KarmaLink *self, uint16_t topic_id, KarmaMessage msg);
 	// TODO: remove_listener?
+	// TODO: request/response
 
 	void (*release) (struct KarmaLink **pself);
 } KarmaLink;

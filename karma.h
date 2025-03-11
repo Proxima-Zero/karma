@@ -8,47 +8,67 @@
 #include <stdint.h>
 
 typedef enum {
-	KARMA_TCP_TYPE_POST = 1,
-	KARMA_TCP_TYPE_LISTEN = 2
+	// just post a message don't caring if anyone respond to it
+	KARMA_MSG_TYPE_POST    = 1,
+	// setup listener for a topic
+	KARMA_MSG_TYPE_LISTEN  = 2,
+	// post a message that need immediate response
+	KARMA_MSG_TYPE_REQUEST = 3,
+	// setup listener to respond for requests
+	KARMA_MSG_TYPE_RESPOND = 4
 } KarmaTcpConnType;
 
 typedef struct {
 	KarmaTcpConnType type;
-	uint16_t topic_id;
+	uint16_t         topic_id;
 } KarmaTcpConnHeader;
 
 typedef struct {
 	uint32_t payload_size;
-	uint8_t *payload;
+	uint8_t  *payload;
 } KarmaMessage;
 
-typedef void (*KarmaListener) (KarmaMessage msg, void *ctx);
+typedef struct {
+	KarmaMessage *msgs;
+	size_t       len;
+} KarmaMessages;
+
+typedef KarmaMessage (*KarmaResponder) (KarmaMessage msg, void *ctx);
+typedef void         (*KarmaListener)  (KarmaMessage msg, void *ctx);
 
 typedef struct KarmaTopic {
-	size_t listeners_len;
-	size_t listeners_cap;
-	KarmaListener *listeners;
-	void **ctxs;
+	size_t         responders_len;
+	size_t         responders_cap;
+	KarmaResponder *responders;
+	void           **rctxs;
 
-	void (*add_listener) (struct KarmaTopic *self, KarmaListener kl, void *ctx);
-	void (*post_message) (struct KarmaTopic *self, KarmaMessage msg);
-	void (*release) (struct KarmaTopic **pself);
+	size_t        listeners_len;
+	size_t        listeners_cap;
+	KarmaListener *listeners;
+	void          **ctxs;
+
+	void          (*add_listener)  (struct KarmaTopic *self, KarmaListener kl, void *ctx);
+	void          (*add_responder) (struct KarmaTopic *self, KarmaResponder kr, void *ctx);
+	void          (*post_message)  (struct KarmaTopic *self, KarmaMessage msg);
+	KarmaMessages (*make_request)  (struct KarmaTopic *self, KarmaMessage msg);
+
+	void          (*release)       (struct KarmaTopic **pself);
 } KarmaTopic;
 
 KarmaTopic *form_karma_topic();
 
 typedef struct Karma {
-	// TODO: prolly should add some flexibility... or probably we good and just need 
-	//       to specify these variables at compile time
 	KarmaTopic **topics;
 	size_t topics_len;
 
-	void (*add_listener)(struct Karma *self, uint16_t topic_id, KarmaListener kl, void *ctx);
-	void (*post_message)(struct Karma *self, uint16_t topic_id, KarmaMessage msg);
+	void          (*add_listener)  (struct Karma *self, uint16_t topic_id, KarmaListener kl, void *ctx);
+	void          (*add_responder) (struct Karma *self, uint16_t topic_id, KarmaResponder kr, void *ctx);
+	void          (*post_message)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
+	KarmaMessages (*make_request)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
 
-	void (*tcp_listen) (struct Karma *self, uint16_t port);
+	void          (*tcp_listen)    (struct Karma *self, uint16_t port);
 
-	void (*release) (struct Karma **pself);
+	void          (*release)       (struct Karma **pself);
 } Karma;
 
 Karma* form_karma();

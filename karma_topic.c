@@ -19,6 +19,31 @@ karma_topic_add_listener(KarmaTopic *self, KarmaListener kl, void *ctx) {
 	self->listeners_len++;
 }
 
+static KarmaMessages
+karma_topic_make_request(KarmaTopic *self, KarmaMessage msg) {
+	KarmaMessages resps;
+	resps.len = 0;
+	for (size_t i = 0; i < self->responders_len; ++i) {
+		void *ctx = self->ctxs[i];
+		resps.msgs[resps.len++] = self->responders[i](msg, ctx);
+	}
+
+	return resps;
+}
+
+static void 
+karma_topic_add_responder(KarmaTopic *self, KarmaResponder kr, void *ctx) {
+	if (self->responders_len == self->responders_cap) {
+		self->responders_cap *= CAP_MULTIPLIER;
+		self->responders = realloc(self->responders, sizeof(KarmaResponder) * self->responders_cap);
+		self->ctxs = realloc(self->ctxs, sizeof(void*) * self->responders_cap);
+	}
+
+	self->responders[self->responders_len] = kr;
+	self->ctxs[self->responders_len] = ctx;
+	self->responders_len++;
+}
+
 static void
 karma_topic_post_message(KarmaTopic *self, KarmaMessage msg) {
 	for (size_t i = 0; i < self->listeners_len; ++i) {
@@ -45,6 +70,8 @@ KarmaTopic *form_karma_topic() {
 
 	topic->add_listener = karma_topic_add_listener;
 	topic->post_message = karma_topic_post_message;
+	topic->add_responder = karma_topic_add_responder;
+	topic->make_request = karma_topic_make_request;
 	topic->release = karma_topic_release;
 
 	return topic;

@@ -82,7 +82,7 @@ karma_link_tcp_add_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListene
 	}
 
 	KarmaTcpConnHeader header = {
-		.type = KARMA_TCP_TYPE_LISTEN,
+		.type = KARMA_MSG_TYPE_LISTEN,
 		.topic_id = htons(topic_id),
 	};
 
@@ -109,7 +109,7 @@ karma_link_tcp_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg
 	}
 
 	KarmaTcpConnHeader header = {
-		.type = KARMA_TCP_TYPE_POST,
+		.type = KARMA_MSG_TYPE_POST,
 		.topic_id = htons(topic_id),
 	};
 

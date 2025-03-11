@@ -71,7 +71,7 @@ karma_tcp_listen_loop(void *ctx) {
 		header.topic_id = ntohs(header.topic_id);
 
 		switch (header.type) {
-		case KARMA_TCP_TYPE_POST:
+		case KARMA_MSG_TYPE_POST:
 			KarmaMessage msg;
 			nrecv = recv(clientfd, &msg.payload_size, sizeof(msg.payload_size), 0);
 
@@ -96,12 +96,18 @@ karma_tcp_listen_loop(void *ctx) {
 			free(msg.payload);
 			close(clientfd);
 			break;
-		case KARMA_TCP_TYPE_LISTEN:
+		case KARMA_MSG_TYPE_LISTEN:
 			KarmaTcpCbCtx *cbctx = malloc(sizeof(KarmaTcpCbCtx));
 			cbctx->karma = self;
 			cbctx->clientfd = clientfd;
 			mtx_init(&cbctx->mutex, mtx_plain);
 			self->add_listener(self, header.topic_id, karma_tcp_listener_cb, cbctx);
+			break;
+		case KARMA_MSG_TYPE_REQUEST:
+			// TODO:
+			break;
+		case KARMA_MSG_TYPE_RESPOND:
+			// TODO:
 			break;
 		}
 	}
