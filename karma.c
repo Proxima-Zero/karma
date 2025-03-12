@@ -3,12 +3,16 @@
 
 static void
 release_karma(Karma **pself) {
-	for (ssize_t i = 0; i < (*pself)->topics_len; ++i) {
-		KarmaTopic *topic = (*pself)->topics[i];
+	Karma *self = *pself;
+	for (ssize_t i = 0; i < self->topics_len; ++i) {
+		KarmaTopic *topic = self->topics[i];
 		if (NULL != topic) {
 			topic->release(&topic);
 		}
 	}
+
+	self->stop_tcp_listen_all(self);
+	self->tcp_connections->release(&self->tcp_connections);
 	free(*pself);
 	*pself = NULL;
 }
@@ -49,7 +53,6 @@ karma_add_responder(Karma *self, uint16_t topic_id, KarmaResponder kr) {
 static Array*/*KarmaMessage*/
 karma_make_request(Karma *self, uint16_t topic_id, KarmaMessage msg) {
 	KarmaTopic *topic = karma_get_topic(self, topic_id);
-	fwrite(msg.payload, sizeof(uint8_t), msg.payload_size, stdout);
 	return topic->make_request(topic, msg);
 }
 
@@ -57,13 +60,19 @@ Karma*
 form_karma() {
 	Karma *karma = malloc(sizeof(*karma));
 
+	karma->tcp_connections = form_array(sizeof(KarmaTcpConnection));
+
 	karma->add_listener = karma_add_listener;
 	karma->post_message = karma_post_message;
 	karma->add_responder = karma_add_responder;
 	karma->make_request = karma_make_request;
 
+	// karma_tcp.h
+	karma->start_tcp_listen = karma_start_tcp_listen; 
+	karma->stop_tcp_listen = karma_stop_tcp_listen;
+	karma->stop_tcp_listen_all = karma_stop_tcp_listen_all;
+
 	karma->release = release_karma;
-	karma->tcp_listen = karma_tcp_listen; // karma_tcp.h
 
 	return karma;
 }

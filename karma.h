@@ -1,11 +1,12 @@
 #ifndef KARMA_H_
 #define KARMA_H_
 
+#include <stdatomic.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
 // TODO: dep management
 #include "../codex/array.h"
@@ -57,23 +58,31 @@ typedef struct KarmaTopic {
 	void                   (*post_message)  (struct KarmaTopic *self, KarmaMessage msg);
 	Array*/*KarmaMessage*/ (*make_request)  (struct KarmaTopic *self, KarmaMessage msg);
 
-	void                   (*release)       (struct KarmaTopic **pself);
+	void                   (*release) (struct KarmaTopic **pself);
 } KarmaTopic;
 
 KarmaTopic *form_karma_topic();
 
+typedef struct {
+	uint16_t port;
+	atomic_bool *stop_flag;
+} KarmaTcpConnection;
+
 typedef struct Karma {
-	KarmaTopic **topics;
-	size_t topics_len;
+	KarmaTopic                  **topics;
+	size_t                      topics_len;
+	Array/*KarmaTcpConnection*/ *tcp_connections;
 
-	void                   (*add_listener)  (struct Karma *self, uint16_t topic_id, KarmaListener kl);
-	void                   (*add_responder) (struct Karma *self, uint16_t topic_id, KarmaResponder kr);
-	void                   (*post_message)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
-	Array*/*KarmaMessage*/ (*make_request)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
+	void                   (*add_listener)     (struct Karma *self, uint16_t topic_id, KarmaListener kl);
+	void                   (*add_responder)    (struct Karma *self, uint16_t topic_id, KarmaResponder kr);
+	void                   (*post_message)     (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
+	Array*/*KarmaMessage*/ (*make_request)     (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
 
-	void                   (*tcp_listen)    (struct Karma *self, uint16_t port);
+	void                   (*start_tcp_listen)    (struct Karma *self, uint16_t port);
+	void                   (*stop_tcp_listen)     (struct Karma *self, uint16_t port);
+	void                   (*stop_tcp_listen_all) (struct Karma *self);
 
-	void                   (*release)       (struct Karma **pself);
+	void                   (*release) (struct Karma **pself);
 } Karma;
 
 Karma* form_karma();

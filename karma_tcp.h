@@ -3,13 +3,16 @@
 #include "karma.h"
 
 #include <arpa/inet.h>
+#include <stdatomic.h>
+#include <stdbool.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <threads.h>
+#include <unistd.h>
 
 typedef struct {
 	Karma *karma;
 	int sockfd;
+	atomic_bool *stop_flag;
 } KarmaTcpCtx;
 
 
@@ -48,8 +51,10 @@ karma_tcp_listen_loop(void *ctx) {
 	KarmaTcpCtx *tcpctx = ctx;
 	Karma *self = tcpctx->karma;
 	int sockfd = tcpctx->sockfd;
+	atomic_bool *stop_flag = tcpctx->stop_flag;
+	free(ctx);
 
-	while (1) {
+	while (!atomic_load(stop_flag)) {
 		// TODO: graceful stop
 		struct sockaddr_in cliaddr;
 		socklen_t clilen = sizeof(sizeof(cliaddr));
@@ -114,15 +119,15 @@ karma_tcp_listen_loop(void *ctx) {
 			break;
 		}
 	}
-
-	free(ctx);
+	free(stop_flag);
+	close(sockfd);
 
 	return 0;
 }
 
 static void 
-karma_tcp_listen(Karma *self, uint16_t port) {
-	// TODO: impl
+karma_start_tcp_listen(Karma *self, uint16_t port) {
+	// TODO: check whether connection already exists
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (sockfd == -1) {
@@ -148,13 +153,49 @@ karma_tcp_listen(Karma *self, uint16_t port) {
 		exit(EXIT_FAILURE);
 	}
 
+
+	atomic_bool *stop_flag = malloc(sizeof(atomic_bool));
+	*stop_flag = ATOMIC_VAR_INIT(false);
+
+	KarmaTcpConnection conn = {
+		.port = port,
+		.stop_flag = stop_flag,
+	};
+
+	Array *tc = self->tcp_connections;
+	tc->add(tc, &conn);
+
 	KarmaTcpCtx *ctx = malloc(sizeof(*ctx));
 	ctx->karma = self;
 	ctx->sockfd = sockfd;
+	ctx->stop_flag = stop_flag;
 
 	thrd_t thread;
 	thrd_create(&thread, karma_tcp_listen_loop, ctx);
 	printf("Karma is started listening TCP traffic on port %d\n", port);
+}
+
+static void
+karma_stop_tcp_listen(Karma *self, uint16_t port) {
+	Array *tc = self->tcp_connections;
+	for (size_t i = 0; i < tc->len; ++i) {
+		KarmaTcpConnection *conn = tc->get(tc, i);
+		if (conn->port == port) {
+			atomic_store(conn->stop_flag, true);
+			break;
+		}
+		printf("Stopped listening for TCP traffic on port %d\n", port);
+	}
+}
+
+static void
+karma_stop_tcp_listen_all(Karma *self) {
+	Array *tc = self->tcp_connections;
+	for (size_t i = 0; i < tc->len; ++i) {
+		KarmaTcpConnection *conn = tc->get(tc, i);
+		atomic_store(conn->stop_flag, true);
+		printf("Stopped listening TCP traffic\n");
+	}
 }
 
 #endif

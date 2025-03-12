@@ -16,7 +16,7 @@ KarmaMessage karma_responder(KarmaMessage msg, void *ctx) {
 	fwrite(msg.payload, sizeof(uint8_t), msg.payload_size, stdout);
 
 	resp.payload = resp_payload;
-	resp.payload_size = strlen(resp.payload);
+	resp.payload_size = strlen(resp.payload) + 1;
 
 	return resp;
 }
@@ -24,7 +24,7 @@ KarmaMessage karma_responder(KarmaMessage msg, void *ctx) {
 
 int main() {
 	Karma *karma = form_karma();
-	karma->tcp_listen(karma, 1337);
+	karma->start_tcp_listen(karma, 1337);
 
 	KarmaLink *link = form_direct_link(karma);
 	KarmaLink *tcp_link = form_tcp_link("127.0.0.1", 1337);
@@ -37,14 +37,14 @@ int main() {
 
 	size_t len = strlen(post);
 	KarmaMessage msg;
-	msg.payload_size = len;
+	msg.payload_size = len + 1;
 	msg.payload = post;
 
 	tcp_link->post_message(tcp_link, 0, msg);
 
 	sleep(1);
 	char *req = "Request: He who lives without looking for pleasures, his senses well controlled, moderate in his food, faithful and strong...\n";
-	msg.payload_size = strlen(req);
+	msg.payload_size = strlen(req) + 1;
 	msg.payload = req;
 
 	link->add_responder(link, 1, (KarmaResponder) {
@@ -58,5 +58,6 @@ int main() {
 
 	link->release(&link);
 	karma->release(&karma);
+	sleep(1);
 	return 0;
 }
