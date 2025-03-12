@@ -29,9 +29,9 @@ karma_get_topic(Karma *karma, uint16_t topic_id) {
 }
 
 static void
-karma_add_listener(Karma *self, uint16_t topic_id, KarmaListener kl, void *ctx) {
+karma_add_listener(Karma *self, uint16_t topic_id, KarmaListener kl) {
 	KarmaTopic *topic = karma_get_topic(self, topic_id);
-	topic->add_listener(topic, kl, ctx);
+	topic->add_listener(topic, kl);
 }
 
 static void

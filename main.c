@@ -30,7 +30,10 @@ int main() {
 	KarmaLink *tcp_link = form_tcp_link("127.0.0.1", 1337);
 	char *post = "POST: If a man speaks or acts with a pure thought, happiness follows him, like a shadow that never leaves him.\n";
 
-	tcp_link->add_listener(tcp_link, 0, karma_listener, NULL);
+	tcp_link->add_listener(tcp_link, 0, (KarmaListener) {
+		.cb = karma_listener, 
+		.ctx = NULL
+	});
 
 	size_t len = strlen(post);
 	KarmaMessage msg;

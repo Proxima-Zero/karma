@@ -5,7 +5,8 @@
 #include <arpa/inet.h>
 
 typedef KarmaMessage (*KarmaLinkResponder) (KarmaMessage msg, void *ctx);
-typedef void         (*KarmaLinkListener)  (KarmaMessage msg, void *ctx);
+
+typedef KarmaListener KarmaLinkListener;
 
 typedef struct KarmaLink {
 	union {
@@ -16,7 +17,7 @@ typedef struct KarmaLink {
 			struct sockaddr_in servaddr;
 		} tcp;
 	} data;
-	void          (*add_listener)  (struct KarmaLink *self, uint16_t topic_id, KarmaLinkListener kl, void *ctx);
+	void          (*add_listener)  (struct KarmaLink *self, uint16_t topic_id, KarmaLinkListener kl);
 	void          (*post_message)  (struct KarmaLink *self, uint16_t topic_id, KarmaMessage msg);
 	// TODO: remove_listener?
 	void          (*add_responder) (struct KarmaLink *self, uint16_t topic_id, KarmaLinkResponder kr, void *ctx);

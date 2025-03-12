@@ -7,6 +7,9 @@
 #include <string.h>
 #include <stdint.h>
 
+// TODO: dep management
+#include "../codex/array.h"
+
 typedef enum {
 	// just post a message don't caring if anyone respond to it
 	KARMA_MSG_TYPE_POST    = 1,
@@ -34,7 +37,12 @@ typedef struct KarmaMessages {
 } KarmaMessages;
 
 typedef KarmaMessage (*KarmaResponder) (KarmaMessage msg, void *ctx);
-typedef void         (*KarmaListener)  (KarmaMessage msg, void *ctx);
+
+typedef struct {
+	void *ctx;
+
+	void (*cb) (KarmaMessage msg, void *ctx);
+} KarmaListener;
 
 typedef struct KarmaTopic {
 	size_t         responders_len;
@@ -42,12 +50,9 @@ typedef struct KarmaTopic {
 	KarmaResponder *responders;
 	void           **rctxs;
 
-	size_t        listeners_len;
-	size_t        listeners_cap;
-	KarmaListener *listeners;
-	void          **ctxs;
+	Array/*KarmaListener*/ *listeners;
 
-	void          (*add_listener)  (struct KarmaTopic *self, KarmaListener kl, void *ctx);
+	void          (*add_listener)  (struct KarmaTopic *self, KarmaListener kl);
 	void          (*add_responder) (struct KarmaTopic *self, KarmaResponder kr, void *ctx);
 	void          (*post_message)  (struct KarmaTopic *self, KarmaMessage msg);
 	KarmaMessages (*make_request)  (struct KarmaTopic *self, KarmaMessage msg);
@@ -61,7 +66,7 @@ typedef struct Karma {
 	KarmaTopic **topics;
 	size_t topics_len;
 
-	void          (*add_listener)  (struct Karma *self, uint16_t topic_id, KarmaListener kl, void *ctx);
+	void          (*add_listener)  (struct Karma *self, uint16_t topic_id, KarmaListener kl);
 	void          (*add_responder) (struct Karma *self, uint16_t topic_id, KarmaResponder kr, void *ctx);
 	void          (*post_message)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
 	KarmaMessages (*make_request)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);

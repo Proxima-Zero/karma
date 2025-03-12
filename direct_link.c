@@ -3,10 +3,10 @@
 #include <stdlib.h>
 
 static void
-karma_link_direct_create_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListener kl, void *ctx) {
+karma_link_direct_create_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListener kl) {
 	Karma *karma = self->data.direct.karma;
 	// for direct link KarmaLinkListener and KarmaListener are the same
-	karma->add_listener(karma, topic_id, (KarmaListener) kl, ctx);
+	karma->add_listener(karma, topic_id, (KarmaListener) kl);
 }
 
 static void

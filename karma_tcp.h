@@ -101,7 +101,10 @@ karma_tcp_listen_loop(void *ctx) {
 			cbctx->karma = self;
 			cbctx->clientfd = clientfd;
 			mtx_init(&cbctx->mutex, mtx_plain);
-			self->add_listener(self, header.topic_id, karma_tcp_listener_cb, cbctx);
+			self->add_listener(self, header.topic_id, (KarmaListener) {
+				.cb = karma_tcp_listener_cb,
+				.ctx = cbctx
+			});
 			break;
 		case KARMA_MSG_TYPE_REQUEST:
 			// TODO:

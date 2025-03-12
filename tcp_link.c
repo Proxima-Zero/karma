@@ -28,7 +28,6 @@ establish_connection(KarmaLink *self) {
 typedef struct {
 	KarmaLinkListener kll;
 	int sock;
-	void *usr_ctx;
 } KarmaLinkTcpCtx;
 
 static int
@@ -36,7 +35,6 @@ karma_link_tcp_start_listen(void *ctx) {
 	KarmaLinkTcpCtx *tcp_ctx = ctx;
 	KarmaLinkListener kll = tcp_ctx->kll;
 	int sock = tcp_ctx->sock;
-	void *usr_ctx = tcp_ctx->usr_ctx;
 	free(ctx);
 
 	uint64_t bufsize = 1024;
@@ -68,13 +66,13 @@ karma_link_tcp_start_listen(void *ctx) {
 
 		msg.payload = buffer;
 
-		kll(msg, usr_ctx);
+		kll.cb(msg, kll.ctx);
 	}
 	free(buffer);
 }
 
 static void
-karma_link_tcp_add_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListener kll, void *ctx) {
+karma_link_tcp_add_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListener kll) {
 	int sock;
 
 	if ((sock = establish_connection(self)) == -1) {
@@ -96,7 +94,6 @@ karma_link_tcp_add_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListene
 	KarmaLinkTcpCtx *listen_ctx = malloc(sizeof(KarmaLinkTcpCtx));
 	listen_ctx->kll = kll;
 	listen_ctx->sock = sock;
-	listen_ctx->usr_ctx = ctx;
 	thrd_create(&thread, karma_link_tcp_start_listen, listen_ctx);
 }
 
