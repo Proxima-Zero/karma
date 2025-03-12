@@ -41,14 +41,15 @@ karma_post_message(Karma *self, uint16_t topic_id, KarmaMessage msg) {
 }
 
 static void
-karma_add_responder(Karma *self, uint16_t topic_id, KarmaResponder kr, void *ctx) {
+karma_add_responder(Karma *self, uint16_t topic_id, KarmaResponder kr) {
 	KarmaTopic *topic = karma_get_topic(self, topic_id);
-	topic->add_responder(topic, kr, ctx);
+	topic->add_responder(topic, kr);
 }
 
-static KarmaMessages
+static Array*/*KarmaMessage*/
 karma_make_request(Karma *self, uint16_t topic_id, KarmaMessage msg) {
 	KarmaTopic *topic = karma_get_topic(self, topic_id);
+	fwrite(msg.payload, sizeof(uint8_t), msg.payload_size, stdout);
 	return topic->make_request(topic, msg);
 }
 

@@ -36,7 +36,11 @@ typedef struct KarmaMessages {
 	size_t       len;
 } KarmaMessages;
 
-typedef KarmaMessage (*KarmaResponder) (KarmaMessage msg, void *ctx);
+typedef struct {
+	void *ctx;
+
+	KarmaMessage (*cb) (KarmaMessage msg, void *ctx);
+} KarmaResponder;
 
 typedef struct {
 	void *ctx;
@@ -45,19 +49,15 @@ typedef struct {
 } KarmaListener;
 
 typedef struct KarmaTopic {
-	size_t         responders_len;
-	size_t         responders_cap;
-	KarmaResponder *responders;
-	void           **rctxs;
+	Array/*KarmaResponder*/ *responders;
+	Array/*KarmaListener*/  *listeners;
 
-	Array/*KarmaListener*/ *listeners;
+	void                   (*add_listener)  (struct KarmaTopic *self, KarmaListener kl);
+	void                   (*add_responder) (struct KarmaTopic *self, KarmaResponder kr);
+	void                   (*post_message)  (struct KarmaTopic *self, KarmaMessage msg);
+	Array*/*KarmaMessage*/ (*make_request)  (struct KarmaTopic *self, KarmaMessage msg);
 
-	void          (*add_listener)  (struct KarmaTopic *self, KarmaListener kl);
-	void          (*add_responder) (struct KarmaTopic *self, KarmaResponder kr, void *ctx);
-	void          (*post_message)  (struct KarmaTopic *self, KarmaMessage msg);
-	KarmaMessages (*make_request)  (struct KarmaTopic *self, KarmaMessage msg);
-
-	void          (*release)       (struct KarmaTopic **pself);
+	void                   (*release)       (struct KarmaTopic **pself);
 } KarmaTopic;
 
 KarmaTopic *form_karma_topic();
@@ -66,14 +66,14 @@ typedef struct Karma {
 	KarmaTopic **topics;
 	size_t topics_len;
 
-	void          (*add_listener)  (struct Karma *self, uint16_t topic_id, KarmaListener kl);
-	void          (*add_responder) (struct Karma *self, uint16_t topic_id, KarmaResponder kr, void *ctx);
-	void          (*post_message)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
-	KarmaMessages (*make_request)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
+	void                   (*add_listener)  (struct Karma *self, uint16_t topic_id, KarmaListener kl);
+	void                   (*add_responder) (struct Karma *self, uint16_t topic_id, KarmaResponder kr);
+	void                   (*post_message)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
+	Array*/*KarmaMessage*/ (*make_request)  (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
 
-	void          (*tcp_listen)    (struct Karma *self, uint16_t port);
+	void                   (*tcp_listen)    (struct Karma *self, uint16_t port);
 
-	void          (*release)       (struct Karma **pself);
+	void                   (*release)       (struct Karma **pself);
 } Karma;
 
 Karma* form_karma();

@@ -47,9 +47,14 @@ int main() {
 	msg.payload_size = strlen(req);
 	msg.payload = req;
 
-	link->add_responder(link, 1, karma_responder, NULL);
-	KarmaMessages msgs = link->make_request(link, 1, msg);
-	fwrite(msgs.msgs[0].payload, sizeof(uint8_t), msgs.msgs[0].payload_size, stdout);
+	link->add_responder(link, 1, (KarmaResponder) {
+		.cb = karma_responder, 
+		.ctx = NULL
+	});
+
+	Array *msgs = link->make_request(link, 1, msg);
+	msg = *(KarmaMessage *) msgs->get(msgs, 0);
+	fwrite(msg.payload, sizeof(uint8_t), msg.payload_size, stdout);
 
 	link->release(&link);
 	karma->release(&karma);

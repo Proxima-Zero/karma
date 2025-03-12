@@ -5,7 +5,6 @@
 static void
 karma_link_direct_create_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListener kl) {
 	Karma *karma = self->data.direct.karma;
-	// for direct link KarmaLinkListener and KarmaListener are the same
 	karma->add_listener(karma, topic_id, (KarmaListener) kl);
 }
 
@@ -16,12 +15,12 @@ karma_link_direct_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage 
 }
 
 static void
-karma_link_direct_create_responder(KarmaLink *self, uint16_t topic_id, KarmaLinkResponder kr, void *ctx) {
+karma_link_direct_create_responder(KarmaLink *self, uint16_t topic_id, KarmaLinkResponder kr) {
 	Karma *karma = self->data.direct.karma;
-	return karma->add_responder(karma, topic_id, kr, ctx);
+	return karma->add_responder(karma, topic_id, (KarmaResponder) kr);
 }
 
-static KarmaMessages
+static Array*/*KarmaMessage*/
 karma_link_direct_make_request(KarmaLink *self, uint16_t topic_id, KarmaMessage msg) {
 	Karma *karma = self->data.direct.karma;
 	return karma->make_request(karma, topic_id, msg);

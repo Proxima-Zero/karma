@@ -132,11 +132,11 @@ karma_link_tcp_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg
 }
 
 static void
-karma_link_tcp_create_responder(KarmaLink *self, uint16_t topic_id, KarmaLinkResponder kr, void *ctx) {
+karma_link_tcp_create_responder(KarmaLink *self, uint16_t topic_id, KarmaLinkResponder kr) {
 	// TODO: impl
 }
 
-static KarmaMessages
+static Array*/*KarmaMessage*/
 karma_link_tcp_make_request(KarmaLink *self, uint16_t topic_id, KarmaMessage msg) {
 	// TODO: impl
 }

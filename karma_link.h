@@ -4,7 +4,7 @@
 
 #include <arpa/inet.h>
 
-typedef KarmaMessage (*KarmaLinkResponder) (KarmaMessage msg, void *ctx);
+typedef KarmaResponder KarmaLinkResponder;
 
 typedef KarmaListener KarmaLinkListener;
 
@@ -17,13 +17,13 @@ typedef struct KarmaLink {
 			struct sockaddr_in servaddr;
 		} tcp;
 	} data;
-	void          (*add_listener)  (struct KarmaLink *self, uint16_t topic_id, KarmaLinkListener kl);
-	void          (*post_message)  (struct KarmaLink *self, uint16_t topic_id, KarmaMessage msg);
+	void                   (*add_listener)  (struct KarmaLink *self, uint16_t topic_id, KarmaLinkListener kl);
+	void                   (*post_message)  (struct KarmaLink *self, uint16_t topic_id, KarmaMessage msg);
 	// TODO: remove_listener?
-	void          (*add_responder) (struct KarmaLink *self, uint16_t topic_id, KarmaLinkResponder kr, void *ctx);
-	KarmaMessages (*make_request)  (struct KarmaLink *self, uint16_t topic_id, KarmaMessage msg);
+	void                   (*add_responder) (struct KarmaLink *self, uint16_t topic_id, KarmaLinkResponder kr);
+	Array*/*KarmaMessage*/ (*make_request)  (struct KarmaLink *self, uint16_t topic_id, KarmaMessage msg);
 
-	void          (*release)       (struct KarmaLink **pself);
+	void                   (*release)       (struct KarmaLink **pself);
 } KarmaLink;
 
 KarmaLink *form_direct_link(Karma *karma);
