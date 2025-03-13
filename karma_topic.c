@@ -19,8 +19,8 @@ karma_topic_make_request(KarmaTopic *self, KarmaMessage msg) {
 	Array *rs = self->responders;
 	for (size_t i = 0; i < rs->len; ++i) {
 		KarmaResponder *kr = rs->get(rs, i);
-		KarmaMessage msg = kr->cb(msg, kr->ctx);
-		resps->add(resps, &msg);
+		KarmaMessage respMsg = kr->cb(msg, kr->ctx);
+		resps->add(resps, &respMsg);
 	}
 
 	return resps;

@@ -43,18 +43,19 @@ int main() {
 	tcp_link->post_message(tcp_link, 0, msg);
 
 	sleep(1);
+	KarmaMessage msg2;
 	char *req = "Request: He who lives without looking for pleasures, his senses well controlled, moderate in his food, faithful and strong...\n";
-	msg.payload_size = strlen(req) + 1;
-	msg.payload = req;
+	msg2.payload_size = strlen(req) + 1;
+	msg2.payload = req;
 
 	link->add_responder(link, 1, (KarmaResponder) {
 		.cb = karma_responder, 
 		.ctx = NULL
 	});
 
-	Array *msgs = link->make_request(link, 1, msg);
-	msg = *(KarmaMessage *) msgs->get(msgs, 0);
-	fwrite(msg.payload, sizeof(uint8_t), msg.payload_size, stdout);
+	Array *msgs = link->make_request(link, 1, msg2);
+	KarmaMessage msg3 = *(KarmaMessage *) msgs->get(msgs, 0);
+	fwrite(msg3.payload, sizeof(uint8_t), msg3.payload_size, stdout);
 
 	link->release(&link);
 	karma->release(&karma);

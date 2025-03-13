@@ -135,6 +135,13 @@ karma_start_tcp_listen(Karma *self, uint16_t port) {
 		exit(EXIT_FAILURE);
 	}
 
+	int opt = 1;
+
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		fprintf(stderr, "setsockopt(SO_REUSEADDR) failed\n");
+		exit(EXIT_FAILURE);
+	}
+
 	struct sockaddr_in servaddr = {
 		.sin_family = AF_INET,
 		.sin_addr.s_addr = INADDR_ANY,
