@@ -46,6 +46,55 @@ end:
 	mtx_unlock(&mutex);
 }
 
+static KarmaMessage 
+karma_tcp_responder_cb(KarmaMessage msg, void *ctx) {
+	// TODO: teardown connection handling
+	KarmaTcpCbCtx *tcpctx = (KarmaTcpCbCtx *) ctx;
+	Karma *self = tcpctx->karma;
+	int clientfd = tcpctx->clientfd;
+	mtx_t mutex = tcpctx->mutex;
+
+	mtx_lock(&mutex);
+
+	// 1. send request
+	uint32_t npayload = htonl(msg.payload_size);
+	if (send(clientfd, &npayload, sizeof(npayload), 0) == -1) {
+		perror("error sending payload size to responder");
+		goto error;
+	}
+
+	if (send(clientfd, msg.payload, msg.payload_size, 0) == -1) {
+		perror("error sending payload to responder");
+		goto error;
+	}
+
+	// 2. get response
+	KarmaMessage resp;
+
+	uint32_t nrecv = recv(clientfd, &resp.payload_size, sizeof(resp.payload_size), 0);
+
+	if (nrecv != sizeof(resp.payload_size)) {
+		perror("error getting response size from responder");
+		goto error;
+	}
+
+	resp.payload_size = ntohs(resp.payload_size);
+
+	nrecv = recv(clientfd, resp.payload, resp.payload_size, 0);
+	if (nrecv != resp.payload_size) {
+		perror("error getting response from responder");
+		goto error;
+	}
+
+	return resp;
+error:
+	mtx_unlock(&mutex);
+	KarmaMessage errorResp;
+	errorResp.payload_size = 0;
+	return errorResp;
+
+}
+
 static int
 karma_tcp_listen_loop(void *ctx) {
 	KarmaTcpCtx *tcpctx = ctx;
@@ -115,7 +164,14 @@ karma_tcp_listen_loop(void *ctx) {
 			// TODO:
 			break;
 		case KARMA_MSG_TYPE_RESPOND:
-			// TODO:
+			cbctx = malloc(sizeof(KarmaTcpCbCtx));
+			cbctx->karma = self;
+			cbctx->clientfd = clientfd;
+			mtx_init(&cbctx->mutex, mtx_plain);
+			self->add_responder(self, header.topic_id, (KarmaResponder) {
+				.cb = karma_tcp_responder_cb,
+				.ctx = cbctx
+			});
 			break;
 		}
 	}
