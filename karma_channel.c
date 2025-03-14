@@ -7,13 +7,13 @@
 #define CAP_MULTIPLIER 2
 
 static void 
-karma_topic_add_listener(KarmaTopic *self, KarmaListener kl) {
+karma_channel_add_listener(KarmaChannel *self, KarmaListener kl) {
 	Array *ls = self->listeners;
 	ls->add(ls, &kl);
 }
 
 static Array*/*KarmaMessage*/
-karma_topic_make_request(KarmaTopic *self, KarmaMessage msg) {
+karma_channel_make_request(KarmaChannel *self, KarmaMessage msg) {
 	// TODO: optimize? there can be a lot of responses... allocate each time?
 	Array *resps = form_array(sizeof(KarmaMessage));
 	Array *rs = self->responders;
@@ -27,13 +27,13 @@ karma_topic_make_request(KarmaTopic *self, KarmaMessage msg) {
 }
 
 static void 
-karma_topic_add_responder(KarmaTopic *self, KarmaResponder kr) {
+karma_channel_add_responder(KarmaChannel *self, KarmaResponder kr) {
 	Array *rs = self->responders;
 	rs->add(rs, &kr);
 }
 
 static void
-karma_topic_post_message(KarmaTopic *self, KarmaMessage msg) {
+karma_channel_post_message(KarmaChannel *self, KarmaMessage msg) {
 	Array *ls = self->listeners; 
 	for (size_t i = 0; i < ls->len; ++i) {
 		KarmaListener *kl = ls->get(ls, i);
@@ -42,7 +42,7 @@ karma_topic_post_message(KarmaTopic *self, KarmaMessage msg) {
 }
 
 static void
-karma_topic_release(KarmaTopic **pself) {
+karma_channel_release(KarmaChannel **pself) {
 	Array *ls = (*pself)->listeners;
 	ls->release(&ls);
 	Array *rs = (*pself)->responders;
@@ -52,16 +52,16 @@ karma_topic_release(KarmaTopic **pself) {
 	*pself = NULL;
 }
 
-KarmaTopic *form_karma_topic() {
-	KarmaTopic *topic = malloc(sizeof(KarmaTopic));
-	topic->responders = form_array(sizeof(KarmaResponder));
-	topic->listeners = form_array(sizeof(KarmaListener));
+KarmaChannel *form_karma_channel() {
+	KarmaChannel *channel = malloc(sizeof(KarmaChannel));
+	channel->responders = form_array(sizeof(KarmaResponder));
+	channel->listeners = form_array(sizeof(KarmaListener));
 
-	topic->add_listener = karma_topic_add_listener;
-	topic->post_message = karma_topic_post_message;
-	topic->add_responder = karma_topic_add_responder;
-	topic->make_request = karma_topic_make_request;
-	topic->release = karma_topic_release;
+	channel->add_listener = karma_channel_add_listener;
+	channel->post_message = karma_channel_post_message;
+	channel->add_responder = karma_channel_add_responder;
+	channel->make_request = karma_channel_make_request;
+	channel->release = karma_channel_release;
 
-	return topic;
+	return channel;
 }

@@ -52,7 +52,7 @@ karma_link_tcp_start_listen(void *ctx) {
 }
 
 static void
-karma_link_tcp_add_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListener kll) {
+karma_link_tcp_add_listener(KarmaLink *self, uint16_t channel_id, KarmaLinkListener kll) {
 	int sock;
 
 	if ((sock = establish_connection(self)) == -1) {
@@ -61,7 +61,7 @@ karma_link_tcp_add_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListene
 
 	KarmaTcpConnHeader header = {
 		.type = KARMA_MSG_TYPE_LISTEN,
-		.topic_id = htons(topic_id),
+		.channel_id = htons(channel_id),
 	};
 
 	if (send(sock, &header, sizeof(KarmaTcpConnHeader), 0) == -1) {
@@ -78,7 +78,7 @@ karma_link_tcp_add_listener(KarmaLink *self, uint16_t topic_id, KarmaLinkListene
 }
 
 static void
-karma_link_tcp_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg) {
+karma_link_tcp_post_message(KarmaLink *self, uint16_t channel_id, KarmaMessage msg) {
 	int sock;
 
 	if ((sock = establish_connection(self)) == -1) {
@@ -87,7 +87,7 @@ karma_link_tcp_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg
 
 	KarmaTcpConnHeader header = {
 		.type = KARMA_MSG_TYPE_POST,
-		.topic_id = htons(topic_id),
+		.channel_id = htons(channel_id),
 	};
 
 	if (send(sock, &header, sizeof(KarmaTcpConnHeader), 0) == -1) {
@@ -102,12 +102,12 @@ karma_link_tcp_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg
 }
 
 static void
-karma_link_tcp_create_responder(KarmaLink *self, uint16_t topic_id, KarmaLinkResponder kr) {
+karma_link_tcp_create_responder(KarmaLink *self, uint16_t channel_id, KarmaLinkResponder kr) {
 	// TODO: impl
 }
 
 static Array*/*KarmaMessage*/
-karma_link_tcp_make_request(KarmaLink *self, uint16_t topic_id, KarmaMessage msg) {
+karma_link_tcp_make_request(KarmaLink *self, uint16_t channel_id, KarmaMessage msg) {
 	// TODO: impl
 }
 

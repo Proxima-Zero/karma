@@ -91,13 +91,13 @@ karma_tcp_listen_loop(void *ctx) {
 			continue;
 			
 		}
-		header.topic_id = ntohs(header.topic_id);
+		header.channel_id = ntohs(header.channel_id);
 
 		switch (header.type) {
 		case KARMA_MSG_TYPE_POST:
 			KarmaMessage msg;
 			if (recv_karma_message(clientfd, &msg) == 0) {
-				self->post_message(self, header.topic_id, msg);
+				self->post_message(self, header.channel_id, msg);
 				free(msg.payload);
 			}
 			close(clientfd);
@@ -107,7 +107,7 @@ karma_tcp_listen_loop(void *ctx) {
 			cbctx->karma = self;
 			cbctx->clientfd = clientfd;
 			mtx_init(&cbctx->mutex, mtx_plain);
-			self->add_listener(self, header.topic_id, (KarmaListener) {
+			self->add_listener(self, header.channel_id, (KarmaListener) {
 				.cb = karma_tcp_listener_cb,
 				.ctx = cbctx
 			});
@@ -120,7 +120,7 @@ karma_tcp_listen_loop(void *ctx) {
 			cbctx->karma = self;
 			cbctx->clientfd = clientfd;
 			mtx_init(&cbctx->mutex, mtx_plain);
-			self->add_responder(self, header.topic_id, (KarmaResponder) {
+			self->add_responder(self, header.channel_id, (KarmaResponder) {
 				.cb = karma_tcp_responder_cb,
 				.ctx = cbctx
 			});

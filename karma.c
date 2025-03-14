@@ -4,10 +4,10 @@
 static void
 release_karma(Karma **pself) {
 	Karma *self = *pself;
-	for (ssize_t i = 0; i < self->topics_len; ++i) {
-		KarmaTopic *topic = self->topics[i];
-		if (NULL != topic) {
-			topic->release(&topic);
+	for (ssize_t i = 0; i < self->channels_len; ++i) {
+		KarmaChannel *channel = self->channels[i];
+		if (NULL != channel) {
+			channel->release(&channel);
 		}
 	}
 
@@ -17,43 +17,43 @@ release_karma(Karma **pself) {
 	*pself = NULL;
 }
 
-static KarmaTopic*
-karma_get_topic(Karma *karma, uint16_t topic_id) {
-	if (topic_id >= karma->topics_len) {
-		karma->topics = realloc(karma->topics, sizeof(KarmaTopic *) * (topic_id + 1));
-		bzero(karma->topics + karma->topics_len, sizeof(KarmaTopic *) * (topic_id + 1 - karma->topics_len));
-		karma->topics_len = topic_id + 1;
+static KarmaChannel*
+karma_get_channel(Karma *karma, uint16_t channel_id) {
+	if (channel_id >= karma->channels_len) {
+		karma->channels = realloc(karma->channels, sizeof(KarmaChannel *) * (channel_id + 1));
+		bzero(karma->channels + karma->channels_len, sizeof(KarmaChannel *) * (channel_id + 1 - karma->channels_len));
+		karma->channels_len = channel_id + 1;
 	}
 
-	if (NULL == karma->topics[topic_id]) {
-		karma->topics[topic_id] = form_karma_topic();
+	if (NULL == karma->channels[channel_id]) {
+		karma->channels[channel_id] = form_karma_channel();
 	}
 
-	return karma->topics[topic_id];
+	return karma->channels[channel_id];
 }
 
 static void
-karma_add_listener(Karma *self, uint16_t topic_id, KarmaListener kl) {
-	KarmaTopic *topic = karma_get_topic(self, topic_id);
-	topic->add_listener(topic, kl);
+karma_add_listener(Karma *self, uint16_t channel_id, KarmaListener kl) {
+	KarmaChannel *channel = karma_get_channel(self, channel_id);
+	channel->add_listener(channel, kl);
 }
 
 static void
-karma_post_message(Karma *self, uint16_t topic_id, KarmaMessage msg) {
-	KarmaTopic *topic = karma_get_topic(self, topic_id);
-	topic->post_message(topic, msg);
+karma_post_message(Karma *self, uint16_t channel_id, KarmaMessage msg) {
+	KarmaChannel *channel = karma_get_channel(self, channel_id);
+	channel->post_message(channel, msg);
 }
 
 static void
-karma_add_responder(Karma *self, uint16_t topic_id, KarmaResponder kr) {
-	KarmaTopic *topic = karma_get_topic(self, topic_id);
-	topic->add_responder(topic, kr);
+karma_add_responder(Karma *self, uint16_t channel_id, KarmaResponder kr) {
+	KarmaChannel *channel = karma_get_channel(self, channel_id);
+	channel->add_responder(channel, kr);
 }
 
 static Array*/*KarmaMessage*/
-karma_make_request(Karma *self, uint16_t topic_id, KarmaMessage msg) {
-	KarmaTopic *topic = karma_get_topic(self, topic_id);
-	return topic->make_request(topic, msg);
+karma_make_request(Karma *self, uint16_t channel_id, KarmaMessage msg) {
+	KarmaChannel *channel = karma_get_channel(self, channel_id);
+	return channel->make_request(channel, msg);
 }
 
 Karma*

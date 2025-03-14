@@ -14,7 +14,7 @@
 typedef enum {
 	// just post a message don't caring if anyone respond to it
 	KARMA_MSG_TYPE_POST    = 1,
-	// setup listener for a topic
+	// setup listener for a channel
 	KARMA_MSG_TYPE_LISTEN  = 2,
 	// post a message that need immediate response
 	KARMA_MSG_TYPE_REQUEST = 3,
@@ -24,7 +24,7 @@ typedef enum {
 
 typedef struct {
 	KarmaTcpConnType type;
-	uint16_t         topic_id;
+	uint16_t         channel_id;
 } KarmaTcpConnHeader;
 
 typedef struct {
@@ -49,19 +49,19 @@ typedef struct {
 	void (*cb) (KarmaMessage msg, void *ctx);
 } KarmaListener;
 
-typedef struct KarmaTopic {
+typedef struct KarmaChannel {
 	Array/*KarmaResponder*/ *responders;
 	Array/*KarmaListener*/  *listeners;
 
-	void                   (*add_listener)  (struct KarmaTopic *self, KarmaListener kl);
-	void                   (*add_responder) (struct KarmaTopic *self, KarmaResponder kr);
-	void                   (*post_message)  (struct KarmaTopic *self, KarmaMessage msg);
-	Array*/*KarmaMessage*/ (*make_request)  (struct KarmaTopic *self, KarmaMessage msg);
+	void                   (*add_listener)  (struct KarmaChannel *self, KarmaListener kl);
+	void                   (*add_responder) (struct KarmaChannel *self, KarmaResponder kr);
+	void                   (*post_message)  (struct KarmaChannel *self, KarmaMessage msg);
+	Array*/*KarmaMessage*/ (*make_request)  (struct KarmaChannel *self, KarmaMessage msg);
 
-	void                   (*release) (struct KarmaTopic **pself);
-} KarmaTopic;
+	void                   (*release) (struct KarmaChannel **pself);
+} KarmaChannel;
 
-KarmaTopic *form_karma_topic();
+KarmaChannel *form_karma_channel();
 
 typedef struct {
 	uint16_t port;
@@ -69,14 +69,14 @@ typedef struct {
 } KarmaTcpConnection;
 
 typedef struct Karma {
-	KarmaTopic                  **topics;
-	size_t                      topics_len;
+	KarmaChannel                **channels;
+	size_t                      channels_len;
 	Array/*KarmaTcpConnection*/ *tcp_connections;
 
-	void                   (*add_listener)     (struct Karma *self, uint16_t topic_id, KarmaListener kl);
-	void                   (*add_responder)    (struct Karma *self, uint16_t topic_id, KarmaResponder kr);
-	void                   (*post_message)     (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
-	Array*/*KarmaMessage*/ (*make_request)     (struct Karma *self, uint16_t topic_id, KarmaMessage msg);
+	void                   (*add_listener)     (struct Karma *self, uint16_t channel_id, KarmaListener kl);
+	void                   (*add_responder)    (struct Karma *self, uint16_t channel_id, KarmaResponder kr);
+	void                   (*post_message)     (struct Karma *self, uint16_t channel_id, KarmaMessage msg);
+	Array*/*KarmaMessage*/ (*make_request)     (struct Karma *self, uint16_t channel_id, KarmaMessage msg);
 
 	void                   (*start_tcp_listen)    (struct Karma *self, uint16_t port);
 	void                   (*stop_tcp_listen)     (struct Karma *self, uint16_t port);

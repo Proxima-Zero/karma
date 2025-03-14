@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CC=${CC:=gcc}
-SRCS="main.c karma.c karma_topic.c direct_link.c tcp_link.c"
+SRCS="main.c karma.c karma_channel.c direct_link.c tcp_link.c"
 BIN=karma
 
 set -x
