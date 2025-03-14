@@ -9,6 +9,8 @@
 #include <threads.h>
 #include <unistd.h>
 
+#include "tcp_common.h"
+
 typedef struct {
 	Karma *karma;
 	int sockfd;
@@ -31,18 +33,7 @@ karma_tcp_listener_cb(KarmaMessage msg, void *ctx) {
 	mtx_t mutex = tcpctx->mutex;
 
 	mtx_lock(&mutex);
-	uint32_t npayload = htonl(msg.payload_size);
-	if (send(clientfd, &npayload, sizeof(npayload), 0) == -1) {
-		perror("error sending payload size to listener");
-		goto end;
-	}
-
-	if (send(clientfd, msg.payload, msg.payload_size, 0) == -1) {
-		perror("error sending payload to listener");
-		goto end;
-	}
-
-end:
+	send_karma_message(clientfd, msg);
 	mtx_unlock(&mutex);
 }
 
@@ -57,34 +48,12 @@ karma_tcp_responder_cb(KarmaMessage msg, void *ctx) {
 	mtx_lock(&mutex);
 
 	// 1. send request
-	uint32_t npayload = htonl(msg.payload_size);
-	if (send(clientfd, &npayload, sizeof(npayload), 0) == -1) {
-		perror("error sending payload size to responder");
+	if (send_karma_message(clientfd, msg) != 0)
 		goto error;
-	}
-
-	if (send(clientfd, msg.payload, msg.payload_size, 0) == -1) {
-		perror("error sending payload to responder");
-		goto error;
-	}
-
 	// 2. get response
 	KarmaMessage resp;
-
-	uint32_t nrecv = recv(clientfd, &resp.payload_size, sizeof(resp.payload_size), 0);
-
-	if (nrecv != sizeof(resp.payload_size)) {
-		perror("error getting response size from responder");
+	if (recv_karma_message(clientfd, &resp) != 0)
 		goto error;
-	}
-
-	resp.payload_size = ntohs(resp.payload_size);
-
-	nrecv = recv(clientfd, resp.payload, resp.payload_size, 0);
-	if (nrecv != resp.payload_size) {
-		perror("error getting response from responder");
-		goto error;
-	}
 
 	return resp;
 error:
@@ -127,27 +96,10 @@ karma_tcp_listen_loop(void *ctx) {
 		switch (header.type) {
 		case KARMA_MSG_TYPE_POST:
 			KarmaMessage msg;
-			nrecv = recv(clientfd, &msg.payload_size, sizeof(msg.payload_size), 0);
-
-			if (nrecv != sizeof(msg.payload_size)) {
-				perror("error receiving payload size");
-				close(clientfd);
-				continue;
+			if (recv_karma_message(clientfd, &msg) == 0) {
+				self->post_message(self, header.topic_id, msg);
+				free(msg.payload);
 			}
-
-			msg.payload_size = ntohl(msg.payload_size);
-			// TODO: optimization using alloca?
-			msg.payload = malloc(msg.payload_size);
-
-			// TODO: adapt; create loop to read very long messages
-			nrecv = recv(clientfd, msg.payload, msg.payload_size, 0);
-			if (nrecv != msg.payload_size) {
-				perror("error reading the whole payload at once");
-				close(clientfd);
-				continue;
-			}
-			self->post_message(self, header.topic_id, msg);
-			free(msg.payload);
 			close(clientfd);
 			break;
 		case KARMA_MSG_TYPE_LISTEN:

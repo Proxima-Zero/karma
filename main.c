@@ -48,7 +48,7 @@ int main() {
 	msg2.payload_size = strlen(req) + 1;
 	msg2.payload = req;
 
-	tcp_link->add_responder(tcp_link, 1, (KarmaResponder) {
+	link->add_responder(link, 1, (KarmaResponder) {
 		.cb = karma_responder, 
 		.ctx = NULL
 	});

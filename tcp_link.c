@@ -1,10 +1,12 @@
 #include "karma_link.h"
 
 #include <arpa/inet.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <threads.h>
 
+#include "tcp_common.h"
 #include "util.h"
 
 static int
@@ -28,6 +30,7 @@ establish_connection(KarmaLink *self) {
 typedef struct {
 	KarmaLinkListener kll;
 	int sock;
+	bool is_responder;
 } KarmaLinkTcpCtx;
 
 static int
@@ -35,40 +38,17 @@ karma_link_tcp_start_listen(void *ctx) {
 	KarmaLinkTcpCtx *tcp_ctx = ctx;
 	KarmaLinkListener kll = tcp_ctx->kll;
 	int sock = tcp_ctx->sock;
+	bool is_responder = tcp_ctx->is_responder;
 	free(ctx);
 
-	uint64_t bufsize = 1024;
-	char *buffer = malloc(bufsize);
 	while (1) {
 		// TODO: reestablishing connection in case of disconnect
 		KarmaMessage msg;
-		int nrecv = recv(sock, &msg.payload_size, sizeof(msg.payload_size), 0);
-
-		if (nrecv != sizeof(msg.payload_size)) {
-			perror("error getting payload size");
-			continue;
+		if (recv_karma_message(sock, &msg) == 0) {
+			kll.cb(msg, kll.ctx);
+			free(msg.payload);
 		}
-
-		msg.payload_size = ntohl(msg.payload_size);
-
-		if (msg.payload_size > bufsize) {
-			bufsize = msg.payload_size;
-			buffer = realloc(buffer, msg.payload_size);
-		}
-
-		// TODO: thread safety considerations for buffer (what if listeners will run threads too?)
-		// TODO: change to a loop. it is possible we cannot read message in one read
-		nrecv = recv(sock, buffer, msg.payload_size, 0);
-		if (nrecv != msg.payload_size) {
-			perror("error reading a whole message payload");
-			continue;
-		}
-
-		msg.payload = buffer;
-
-		kll.cb(msg, kll.ctx);
 	}
-	free(buffer);
 }
 
 static void
@@ -116,17 +96,7 @@ karma_link_tcp_post_message(KarmaLink *self, uint16_t topic_id, KarmaMessage msg
 		return;
 	}
 
-	uint32_t npayload_size = htonl(msg.payload_size);
-	if (send(sock, &npayload_size, sizeof(npayload_size), 0) == -1) {
-		perror("error sending payload size");
-		close(sock);
-		return;
-	}
-
-	if (send(sock, msg.payload, msg.payload_size, 0) == -1) {
-		perror("error sending payload");
-	}
-
+	send_karma_message(sock, msg);
 	close(sock);
 	return;
 }
