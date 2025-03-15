@@ -39,6 +39,12 @@ karma_add_listener(Karma *self, uint16_t channel_id, KarmaListener kl) {
 }
 
 static void
+karma_remove_listener(Karma *self, uint16_t channel_id, KarmaListener kl) {
+	KarmaChannel *channel = karma_get_channel(self, channel_id);
+	channel->remove_listener(channel, kl);
+}
+
+static void
 karma_post_message(Karma *self, uint16_t channel_id, KarmaMessage msg) {
 	KarmaChannel *channel = karma_get_channel(self, channel_id);
 	channel->post_message(channel, msg);
@@ -48,6 +54,12 @@ static void
 karma_add_responder(Karma *self, uint16_t channel_id, KarmaResponder kr) {
 	KarmaChannel *channel = karma_get_channel(self, channel_id);
 	channel->add_responder(channel, kr);
+}
+
+static void
+karma_remove_responder(Karma *self, uint16_t channel_id, KarmaResponder kr) {
+	KarmaChannel *channel = karma_get_channel(self, channel_id);
+	channel->remove_responder(channel, kr);
 }
 
 static Array*/*KarmaMessage*/
@@ -63,8 +75,10 @@ form_karma() {
 	karma->tcp_connections = form_array(sizeof(KarmaTcpConnection));
 
 	karma->add_listener = karma_add_listener;
+	karma->remove_listener = karma_remove_listener;
 	karma->post_message = karma_post_message;
 	karma->add_responder = karma_add_responder;
+	karma->remove_responder = karma_remove_responder;
 	karma->make_request = karma_make_request;
 
 	// karma_tcp.h

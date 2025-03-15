@@ -53,10 +53,12 @@ typedef struct KarmaChannel {
 	Array/*KarmaResponder*/ *responders;
 	Array/*KarmaListener*/  *listeners;
 
-	void                   (*add_listener)  (struct KarmaChannel *self, KarmaListener kl);
-	void                   (*add_responder) (struct KarmaChannel *self, KarmaResponder kr);
-	void                   (*post_message)  (struct KarmaChannel *self, KarmaMessage msg);
-	Array*/*KarmaMessage*/ (*make_request)  (struct KarmaChannel *self, KarmaMessage msg);
+	void                   (*add_listener)     (struct KarmaChannel *self, KarmaListener kl);
+	void                   (*remove_listener)  (struct KarmaChannel *self, KarmaListener kl);
+	void                   (*add_responder)    (struct KarmaChannel *self, KarmaResponder kr);
+	void                   (*remove_responder) (struct KarmaChannel *self, KarmaResponder kr);
+	void                   (*post_message)     (struct KarmaChannel *self, KarmaMessage msg);
+	Array*/*KarmaMessage*/ (*make_request)     (struct KarmaChannel *self, KarmaMessage msg);
 
 	void                   (*release) (struct KarmaChannel **pself);
 } KarmaChannel;
@@ -74,7 +76,9 @@ typedef struct Karma {
 	Array/*KarmaTcpConnection*/ *tcp_connections;
 
 	void                   (*add_listener)     (struct Karma *self, uint16_t channel_id, KarmaListener kl);
+	void                   (*remove_listener)  (struct Karma *self, uint16_t channel_id, KarmaListener kl);
 	void                   (*add_responder)    (struct Karma *self, uint16_t channel_id, KarmaResponder kr);
+	void                   (*remove_responder) (struct Karma *self, uint16_t channel_id, KarmaResponder kr);
 	void                   (*post_message)     (struct Karma *self, uint16_t channel_id, KarmaMessage msg);
 	Array*/*KarmaMessage*/ (*make_request)     (struct Karma *self, uint16_t channel_id, KarmaMessage msg);
 
