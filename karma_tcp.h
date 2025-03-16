@@ -22,6 +22,11 @@ typedef struct {
 	Karma *karma;
 	int clientfd;
 	mtx_t mutex;
+	union {
+		KarmaResponder responder;
+		KarmaListener listener;
+	} callback;
+	uint16_t channel;
 } KarmaTcpCbCtx;
 
 static void
@@ -33,7 +38,14 @@ karma_tcp_listener_cb(KarmaMessage msg, void *ctx) {
 	mtx_t mutex = tcpctx->mutex;
 
 	mtx_lock(&mutex);
-	send_karma_message(clientfd, msg);
+	if (send_karma_message(clientfd, msg) != 0) {
+		uint16_t channel = tcpctx->channel;
+		KarmaListener kl = (KarmaListener) {
+			.cb = karma_tcp_listener_cb,
+			.ctx = ctx,
+		};
+		self->remove_listener(self, channel, kl);
+	};
 	mtx_unlock(&mutex);
 }
 
@@ -55,9 +67,18 @@ karma_tcp_responder_cb(KarmaMessage msg, void *ctx) {
 	if (recv_karma_message(clientfd, &resp) != 0)
 		goto error;
 
+	mtx_unlock(&mutex);
 	return resp;
 error:
 	mtx_unlock(&mutex);
+	close(clientfd);
+
+	uint16_t channel = tcpctx->channel;
+	KarmaResponder kr = {
+		.cb = karma_tcp_responder_cb,
+		.ctx = ctx
+	};
+	self->remove_responder(self, channel, kr);
 	KarmaMessage errorResp;
 	errorResp.payload_size = 0;
 	return errorResp;
@@ -73,7 +94,6 @@ karma_tcp_listen_loop(void *ctx) {
 	free(ctx);
 
 	while (!atomic_load(stop_flag)) {
-		// TODO: graceful stop
 		struct sockaddr_in cliaddr;
 		socklen_t clilen = sizeof(sizeof(cliaddr));
 		int clientfd = accept(sockfd, (struct sockaddr *) &cliaddr, &clilen);
@@ -106,11 +126,13 @@ karma_tcp_listen_loop(void *ctx) {
 			KarmaTcpCbCtx *cbctx = malloc(sizeof(KarmaTcpCbCtx));
 			cbctx->karma = self;
 			cbctx->clientfd = clientfd;
-			mtx_init(&cbctx->mutex, mtx_plain);
-			self->add_listener(self, header.channel_id, (KarmaListener) {
+			cbctx->channel = header.channel_id;
+			KarmaListener kl =  (KarmaListener) {
 				.cb = karma_tcp_listener_cb,
 				.ctx = cbctx
-			});
+			};
+			mtx_init(&cbctx->mutex, mtx_plain);
+			self->add_listener(self, header.channel_id, kl);
 			break;
 		case KARMA_MSG_TYPE_REQUEST:
 			// TODO:
@@ -119,11 +141,13 @@ karma_tcp_listen_loop(void *ctx) {
 			cbctx = malloc(sizeof(KarmaTcpCbCtx));
 			cbctx->karma = self;
 			cbctx->clientfd = clientfd;
-			mtx_init(&cbctx->mutex, mtx_plain);
-			self->add_responder(self, header.channel_id, (KarmaResponder) {
+			cbctx->channel = header.channel_id;
+			KarmaResponder kr = (KarmaResponder) {
 				.cb = karma_tcp_responder_cb,
 				.ctx = cbctx
-			});
+			};
+			mtx_init(&cbctx->mutex, mtx_plain);
+			self->add_responder(self, header.channel_id, kr);
 			break;
 		}
 	}
