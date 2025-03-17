@@ -2,7 +2,7 @@
 
 CODEX_DIR=codex
 CODEX_URL=https://github.com/Proxima-Zero/codex
-CODEX_VERSION=5bc7971734f43efe55d5e0568ca3113cccf39330
+CODEX_VERSION=41d2013c3bc7c7fb84711ada948f29f31d4ab5e2
 
 sync_dep() {
 	DIR=$1

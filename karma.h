@@ -9,7 +9,7 @@
 #include <string.h>
 
 // TODO: dep management
-#include "deps/codex/array.h"
+#include "codex/ds/array.h"
 
 typedef enum {
 	// just post a message don't caring if anyone respond to it

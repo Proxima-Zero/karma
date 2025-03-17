@@ -2,9 +2,17 @@
 
 CC=${CC:=gcc}
 SRCS="main.c karma.c karma_channel.c direct_link.c tcp_link.c"
-BIN=karma
+TARGET=build/libkarma.a
+INCLUDE_PATHS="-I./deps"
 
 set -x
 
 mkdir -p build
-$CC -g -o build/$BIN $SRCS -fno-strict-aliasing
+
+for src in $SRCS; do
+	obj="build/${src%.c}.o"
+	$CC $INCLUDE_PATHS -c "$src" -o "$obj"
+	OBJS="$OBJS $obj"
+done
+
+ar rcs "$TARGET" $OBJS
