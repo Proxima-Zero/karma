@@ -25,8 +25,9 @@ karma_channel_remove_listener(KarmaChannel *self, KarmaListener kl) {
 
 static Array*/*KarmaMessage*/
 karma_channel_make_request(KarmaChannel *self, KarmaMessage msg) {
+	Allocator *a = self->a;
 	// TODO: optimize? there can be a lot of responses... allocate each time?
-	Array *resps = form_array(sizeof(KarmaMessage));
+	Array *resps = form_array(a, sizeof(KarmaMessage));
 	Array *rs = self->responders;
 	for (size_t i = 0; i < rs->len; ++i) {
 		KarmaResponder *kr = rs->get(rs, i);
@@ -74,10 +75,12 @@ karma_channel_release(KarmaChannel **pself) {
 	*pself = NULL;
 }
 
-KarmaChannel *form_karma_channel() {
+KarmaChannel *form_karma_channel(Allocator *a) {
 	KarmaChannel *channel = malloc(sizeof(KarmaChannel));
-	channel->responders = form_array(sizeof(KarmaResponder));
-	channel->listeners = form_array(sizeof(KarmaListener));
+	channel->responders = form_array(a, sizeof(KarmaResponder));
+	channel->listeners = form_array(a, sizeof(KarmaListener));
+
+	channel->a = a;
 
 	channel->add_listener = karma_channel_add_listener;
 	channel->remove_listener = karma_channel_remove_listener;

@@ -1,6 +1,8 @@
 #include "karma.h"
 #include "karma_tcp.h"
 
+#include "codex/allocators/allocator.h"
+
 static void
 release_karma(Karma **pself) {
 	Karma *self = *pself;
@@ -26,7 +28,7 @@ karma_get_channel(Karma *karma, uint16_t channel_id) {
 	}
 
 	if (NULL == karma->channels[channel_id]) {
-		karma->channels[channel_id] = form_karma_channel();
+		karma->channels[channel_id] = form_karma_channel(karma->a);
 	}
 
 	return karma->channels[channel_id];
@@ -69,10 +71,11 @@ karma_make_request(Karma *self, uint16_t channel_id, KarmaMessage msg) {
 }
 
 Karma*
-form_karma() {
-	Karma *karma = malloc(sizeof(*karma));
+form_karma(Allocator *a) {
+	Karma *karma = a->alloc(a, sizeof(*karma));
+	karma->a = a;
 
-	karma->tcp_connections = form_array(sizeof(KarmaTcpConnection));
+	karma->tcp_connections = form_array(a, sizeof(KarmaTcpConnection));
 
 	karma->add_listener = karma_add_listener;
 	karma->remove_listener = karma_remove_listener;
