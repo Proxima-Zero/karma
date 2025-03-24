@@ -7,13 +7,20 @@
 #include "codex/allocators/allocator.h"
 
 typedef struct {
+	// NOTE: it is "remote" karma
 	Karma *karma;
 } DirectLinkCtx;
 
-static void direct_link_ask(KarmaLink *self, void *payload, size_t payload_size, void *responde) {
+static size_t direct_link_ask(KarmaLink *self, void *payload, size_t payload_size, void *response) {
 	DirectLinkCtx *ctx = self->ctx;	
 
-	// TODO: implement sending message to karma
+	Karma *karma = ctx->karma;
+
+	return karma->_emit(self, payload, payload_size, response);
+}
+
+static size_t direct_link_answer(KarmaLink *self, Answer cb, void *ctx) {
+	
 }
 
 static void direct_link_release(KarmaLink **pself) {
